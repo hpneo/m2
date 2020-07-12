@@ -13,26 +13,28 @@ module M2
         option :format, default: "table", values: %w[table csv], desc: "Output format"
 
         def call(**options)
-          headers = ["Date", "ID", "Project", "Model", "Bedrooms", "Area", "Price", "Due Date", "Stage"]
+          headers = ["Date", "ID", "Project", "Model", "Bedrooms", "Area", "Price", "Due Date", "Stage", "Latitude", "Longitude"]
           projects = YAML.load_file("./projects.yml")
           results = projects.flat_map do |project|
             key = project.keys.first
             value = project.values.first
 
             recipe = ScrapKit::Recipe.load(
-              "url": key,
-              "attributes": {
-                "title": ".Project-header h1",
-                "id": "#project_id",
-                "stage": ".bx-data-project.box-st > table > tbody > tr:nth-child(4) > td:nth-child(2)",
-                "due_date": ".bx-data-project.box-st > table > tbody > tr:nth-child(5) > td:nth-child(2)",
-                "info": {
-                  "selector": [".Project-available-model", { ".name_tipology": value.to_s }],
-                  "children_attributes": {
-                    "tipology": "span.name_tipology",
-                    "bedrooms": "span.bedroom",
-                    "area": "span.area",
-                    "price": "span.price"
+              url: key,
+              attributes: {
+                title: ".Project-header h1",
+                id: "#project_id",
+                stage: ".bx-data-project.box-st > table > tbody > tr:nth-child(4) > td:nth-child(2)",
+                due_date: ".bx-data-project.box-st > table > tbody > tr:nth-child(5) > td:nth-child(2)",
+                latitude: "#latitude",
+                longitude: "#longitude",
+                info: {
+                  selector: [".Project-available-model", { ".name_tipology": value.to_s }],
+                  children_attributes: {
+                    tipology: "span.name_tipology",
+                    bedrooms: "span.bedroom",
+                    area: "span.area",
+                    price: "span.price"
                   }
                 }
               }
@@ -43,6 +45,8 @@ module M2
             id = key.split("/").last.split("-").find { |part| part.match(/\d/) }
             due_date = output[:due_date]
             stage = output[:stage]
+            latitude = output[:latitude]
+            longitude = output[:longitude]
 
             output[:info].map do |item|
               tipology = item[:tipology]
@@ -51,7 +55,7 @@ module M2
               area = "#{area} m2"
               price = item[:price]
 
-              [Date.today.to_s, id, title, tipology, bedrooms, area, price, due_date, stage]
+              [Date.today.to_s, id, title, tipology, bedrooms, area, price, due_date, stage, latitude, longitude]
             end
           rescue
             [[Date.today.to_s, key]]
