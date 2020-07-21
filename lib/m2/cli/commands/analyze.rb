@@ -10,7 +10,7 @@ module M2
 
         def call(**_options)
           projects = Project.all
-          projects = projects.select { |project| project.price.match?("S/") }
+          projects = projects.select { |project| project.price&.match?("S/") }
           projects = projects.select { |project| project.date == Date.today }
           projects = projects.select { |project| project.bedrooms > 1 }
           projects = projects.select { |project| project.price_as_number <= 380_000 }
